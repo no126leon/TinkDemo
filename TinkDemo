@@ -1,0 +1,69 @@
+import com.google.crypto.tink.HybridDecrypt;
+import com.google.crypto.tink.HybridEncrypt;
+import com.google.crypto.tink.KeysetHandle;
+import com.google.crypto.tink.config.TinkConfig;
+import com.google.crypto.tink.hybrid.HybridDecryptFactory;
+import com.google.crypto.tink.hybrid.HybridEncryptFactory;
+import com.google.crypto.tink.hybrid.HybridKeyTemplates;
+
+/**
+ * @Description:
+ * @author: leonzhang
+ * @date: 2018年9月12日 上午11:34:48
+ * @version: 1.0
+ */
+
+public class TinkDemo
+{
+    public static void main(String[] args)
+        throws Exception
+    {
+        TinkConfig.register();
+        // KeysetHandle keysetHandle =
+        // KeysetHandle.generateNew(AeadKeyTemplates.AES128_GCM);
+        //
+        // // and write it to a file.
+        // String keysetFilename = "E:\\tink\\my_keyset.json";
+        // CleartextKeysetHandle.write(keysetHandle,
+        // JsonKeysetWriter.withFile(new File(keysetFilename)));
+        //
+        // KeysetHandle keysetHandle = CleartextKeysetHandle.read(
+        // JsonKeysetReader.withFile(new File(keysetFilename)));
+        
+        // 1. Generate the private key material.
+        KeysetHandle privateKeysetHandle = KeysetHandle.generateNew(HybridKeyTemplates.ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM);
+        
+        // Obtain the public key material.
+        KeysetHandle publicKeysetHandle = privateKeysetHandle.getPublicKeysetHandle();
+        
+        // ENCRYPTING
+        
+        // 2. Get the primitive.
+        HybridEncrypt hybridEncrypt = HybridEncryptFactory.getPrimitive(publicKeysetHandle);
+        
+        String text = "明月几时有，把酒问青天!";
+        // 3. Use the primitive.
+        byte[] plaintext = text.getBytes("utf-8");
+        byte[] contextInfo = new byte[6];
+        for (int i = 0; i < 6; i++)
+        {
+            contextInfo[i] = (byte)(i * i);
+        }
+        byte[] ciphertext = hybridEncrypt.encrypt(plaintext, contextInfo);
+        
+        // DECRYPTING
+        
+        // 2. Get the primitive.
+        HybridDecrypt hybridDecrypt = HybridDecryptFactory.getPrimitive(privateKeysetHandle);
+        
+        // 3. Use the primitive.
+        byte[] plaintext2 = hybridDecrypt.decrypt(ciphertext, contextInfo);
+        
+        System.out.println(new String(plaintext2, "utf-8"));
+        
+        for (int i = 0; i < plaintext.length; i++)
+        {
+            System.out.println(plaintext[i]);
+        }
+    }
+}
